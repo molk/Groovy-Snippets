@@ -35,7 +35,7 @@ new ArgsInterpreter(args).with {
 
 	println "Travelling path $path.absolutePath ${excludes ? '(excludes: ' + excludes.join(', ')  + ')' : ''} ..."
 
-	int numberOfFiles, numberOfDirs; long fileSizes
+	int numberOfFiles = 0, numberOfDirs = 0; long fileSizes = 0
 
 	eachFileRecurse(path, filter) { File entry ->
 		if (entry.isDirectory())
@@ -60,10 +60,10 @@ class ArgsInterpreter {
 
 	ArgsInterpreter(args) {
 		cli.with {
-			h ( longOpt: 'help'			     , required: false, 'show usage information'																			 )
-			p ( longOpt: 'path'	    	     , required: false, argName: 'path'					, args: 1, 'the path to create the stats for'						 )
-			x ( longOpt: 'excludes'		     , required: false, argName: 'exclude-list'			, args: 1, 'list of files/directories to exclude eg. \'.svn, .git\'' )
-			s ( longOpt: 'standard-excludes' , required: false, "use standard excludes: $standardExcludes"																 )
+			h longOpt: 'help'			   , required: false , 									   'show usage information'
+			p longOpt: 'path'	    	   , required: false , argName: 'path'		   , args: 1 , 'the path to create the stats for'
+			x longOpt: 'excludes'		   , required: false , argName: 'exclude-list' , args: 1 , 'list of files/directories to exclude eg. \'.svn, .git\''
+			s longOpt: 'standard-excludes' , required: false , 									   "use standard excludes: $standardExcludes"
 		}
 		
 		opts = cli.parse(args)
@@ -102,7 +102,7 @@ def eachFileRecurse(File dir, Closure closure) {
 
 def eachFileRecurse(File dir, Closure filter, Closure closure) {
 	if (dir == null) return
-	if (!dir.exists()) throw new FileNotFoundException(dir.absolute)
+	if (!dir.exists()) throw new FileNotFoundException(dir.absolutePath)
 
 	if (!dir.isDirectory()) {
 		closure?.call(dir)
