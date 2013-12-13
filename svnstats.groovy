@@ -51,16 +51,34 @@ import static Statistics.commitStatisticsFor
  * </pre>
  */
 
+if (args.size() < 1) {
+    println "Usage: svnstats svn-log-file [log]"
+
+    System.exit 1
+}
+
 // path to svn log file
 // created by e.g.: svn log -v -r{2013-01-01}:head --xml > svn-log.xml)
-svnlogfile = '/Users/molk/projects/foo/svn-log.xml'
+svnlogfile = System.properties.'user.dir' + '/' + args[0]
 
+if (args.size() == 2) {
+    Globals.doLog = 'log' == args[1].toLowerCase()
+}
+
+// committer filtering
+// 'all' => do not filter
+// knownCommitters = 'all' // [ 'foo', 'bar' ]
+knownCommitters = [
+    'langeth', 'lohse', 'goedereis', 'skotnicki', 'huebner', 'dohse', 'stoldt', 'bohnhoff',
+    'fegebank', 'krusege', 'jarde', 'mohr', 'desch', 'floedl', 'gunsch', 'philipp', 'proebstlean',
+    'schaeferst', 'muellermi', 'scheffold', 'steidle', 'vishnu', 'taglieber'
+]
 // ugly, but a script generates a class with a main function on the fly and that's why ...
 class Globals {
 
     // set this to true for some noise
     // showing the reformatted XML contents
-    static final doLog = false
+    static doLog = false
 
     static log(text) { if (doLog) println text }
 
@@ -80,7 +98,27 @@ println "Processing $svnlogfile ..."
 
 commitStatistics = commitStatisticsFor commitsByAuthorInLogFile(svnlogfile)
 
-commitStatistics.removeAll { it.author == 'luntbuild' }
+activeCommitters = null
+unknownCommitters = null
+
+// committer filtering
+if (knownCommitters != 'all') { 
+    activeCommitters = commitStatistics.inject([]) { acc, stat ->
+        if (knownCommitters.contains(stat.author)) {
+            acc << stat.author
+        }
+        acc
+    }
+
+    unknownCommitters = commitStatistics.inject([]) { acc, stat ->
+        if (!knownCommitters.contains(stat.author)) {
+            acc << stat.author
+        }
+        acc
+    }
+
+    commitStatistics.removeAll { !knownCommitters.contains(it.author) }
+}
 
 println ''
 println line
@@ -107,6 +145,13 @@ sorting.each { title, order ->
     commitStatistics.sort(order).each { println it }
     println tableLine + '\n'
 }
+
+if (knownCommitters != 'all') {
+    println "Known committers:\n\t${knownCommitters.sort().join(', ')}\n"
+    println "Active committers:\n\t${activeCommitters.sort().join(', ')}\n"
+    println "Unknown committers:\n\t${unknownCommitters.sort().join(', ')}\n"
+}
+
 
 // log file processing and statistics generation namespaces -------------------------------------------------------
 
